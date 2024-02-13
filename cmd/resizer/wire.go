@@ -1,3 +1,4 @@
+//go:build wireinject
 // +build wireinject
 
 package main
@@ -9,6 +10,6 @@ import (
 )
 
 func InitializeTransport() transport.Transport {
-	wire.Build(transport.NewTransport, transport.NewFileHandler, services.NewS3Service)
+	wire.Build(transport.NewTransport, transport.NewFileHandler, services.NewFileService)
 	return transport.Transport{}
 }
