@@ -6,14 +6,8 @@ import (
 	"log"
 )
 
-type S3Config struct {
-	Endpoint        string   `yaml:"endpoint" envconfig:"S3_ENDPOINT"`
-	AccessKeyID     string   `yaml:"accessKeyID" envconfig:"S3_ACCESS_KEY_ID"`
-	SecretAccessKey string   `yaml:"secretAccessKey" envconfig:"S3_SECRET_ACCESS_KEY"`
-	Bucket          string   `yaml:"bucket" envconfig:"S3_BUCKET"`
-	RegionName      string   `yaml:"regionName" envconfig:"S3_REGION_NAME"`
-	UseSSL          bool     `yaml:"useSSL" envconfig:"S3_USE_SSL"`
-	Buckets         []string `yaml:"buckets" envconfig:"S3_BUCKETS"`
+type LocalFSConfig struct {
+	RootDirectory string `yaml:"rootDirectory" envconfig:"LOCAL_FS_ROOT_DIRECTORY"`
 }
 
 type CorsConfig struct {
@@ -21,8 +15,8 @@ type CorsConfig struct {
 }
 
 type Config struct {
-	S3Config   S3Config   `yaml:"s3"`
-	CorsConfig CorsConfig `yaml:"cors"`
+	LocalFSConfig LocalFSConfig `yaml:"localFS"`
+	CorsConfig    CorsConfig    `yaml:"cors"`
 
 	Context struct {
 		Context context.Context    `yaml:"-" envconfig:"-"`
