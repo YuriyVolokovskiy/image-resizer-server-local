@@ -1,0 +1,13 @@
+version: "3"
+services:
+  resizer:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file: .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/media/:/usr/src/app/media
