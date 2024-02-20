@@ -164,23 +164,26 @@ func (s *FileService) GetOrCreteFile(filePath string, allowResize bool) (*os.Fil
 		filePath = setting.Settings.LocalFSConfig.RootDirectory + "/" + filePath
 	}
 
-	file, err := os.Open(filePath)
-	if err != nil {
-		if os.IsNotExist(err) && allowResize {
-			err := s.ResizeFilePath(filePath)
-			if err != nil {
-				return nil, nil, err
+	for {
+		file, err := os.Open(filePath)
+		if err != nil {
+			if os.IsNotExist(err) && allowResize {
+				err := s.ResizeFilePath(filePath)
+				if err != nil {
+					return nil, nil, err
+				}
+				allowResize = false
+				continue
 			}
-			return s.GetOrCreteFile(filePath, false)
+			return nil, nil, err
 		}
-		return nil, nil, err
-	}
 
-	info, err := file.Stat()
-	if err != nil {
-		file.Close()
-		return nil, nil, err
-	}
+		info, err := file.Stat()
+		if err != nil {
+			file.Close()
+			return nil, nil, err
+		}
 
-	return file, info, nil
+		return file, info, nil
+	}
 }
