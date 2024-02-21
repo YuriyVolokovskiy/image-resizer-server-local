@@ -9,6 +9,7 @@ import (
 	"github.com/pantyukhov/imageresizeserver/pkg/setting"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"io"
 	"os"
 	"path/filepath"
@@ -65,12 +66,21 @@ func (s *FileService) ResizeImage(localPath string, height uint, width uint) (im
 	return m, err
 }
 
-func (s *FileService) resizeJpeg(file io.Reader, height uint, width uint) (bytes.Buffer, error) {
-	img, err := imaging.Decode(file, imaging.AutoOrientation(true))
+func (s *FileService) resizeImage(file io.Reader, ext string, height uint, width uint) (image.Image, error) {
+	var img image.Image
+	var err error
 
-	var jpgBuf bytes.Buffer
+	switch ext {
+	case ".jpg", ".jpeg":
+		img, err = jpeg.Decode(file)
+	case ".png":
+		img, err = png.Decode(file)
+	case ".webp":
+		img, err = webp.Decode(file, nil)
+	}
+
 	if err != nil {
-		return jpgBuf, err
+		return nil, err
 	}
 
 	var newImg image.Image
@@ -80,39 +90,37 @@ func (s *FileService) resizeJpeg(file io.Reader, height uint, width uint) (bytes
 		newImg = imaging.Resize(img, int(width), int(height), imaging.Lanczos)
 	}
 
-	err = jpeg.Encode(bufio.NewWriter(&jpgBuf), newImg, &jpeg.Options{Quality: 65})
-
-	return jpgBuf, err
+	return newImg, nil
 }
 
 func (s *FileService) ResizeBytesImage(file io.Reader, filePath string, height uint, width uint) (bytes.Buffer, error) {
-	jpgBuf, err := s.resizeJpeg(file, height, width)
+	ext := filepath.Ext(filePath)
+	img, err := s.resizeImage(file, ext, height, width)
 
 	if err != nil {
-		return jpgBuf, err
+		var buf bytes.Buffer
+		return buf, err
 	}
 
-	ext := filepath.Ext(filePath)
-	if ext == ".webp" {
-		img, err := jpeg.Decode(bytes.NewReader(jpgBuf.Bytes()))
-		if err != nil {
-			return jpgBuf, err
-		}
-
-		var output bytes.Buffer
+	var output bytes.Buffer
+	switch ext {
+	case ".jpg", ".jpeg":
+		err = jpeg.Encode(bufio.NewWriter(&output), img, &jpeg.Options{Quality: 65})
+	case ".png":
+		err = png.Encode(bufio.NewWriter(&output), img)
+	case ".webp":
 		options, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, 100)
-
 		if err != nil {
 			return output, err
 		}
-		if err := webp.Encode(bufio.NewWriter(&output), img, options); err != nil {
-			return output, err
-		}
-		return output, nil
+		err = webp.Encode(bufio.NewWriter(&output), img, options)
 	}
 
-	return jpgBuf, err
+	if err != nil {
+		return output, err
+	}
 
+	return output, nil
 }
 
 func (s *FileService) getOriginalPath(path string) string {
