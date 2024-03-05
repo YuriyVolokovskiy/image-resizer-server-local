@@ -3,6 +3,7 @@ package services
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"github.com/disintegration/imaging"
 	"github.com/kolesa-team/go-webp/encoder"
 	"github.com/kolesa-team/go-webp/webp"
@@ -53,6 +54,24 @@ func (s *FileService) GetResizeSettings(filePath string) (uint, uint, string) {
 
 	path := strings.Join(items[:len(items)-2], "/") + "/" + items[len(items)-1]
 
+	// Open the image file
+	img, err := imaging.Open(path)
+	if err != nil {
+		return uint(0), uint(0), filePath
+	}
+
+	// Get the original image dimensions
+	originalWidth := img.Bounds().Dx()
+	originalHeight := img.Bounds().Dy()
+
+	// If requested dimensions are greater than original, set them to original
+	if width > originalWidth {
+		width = originalWidth
+	}
+	if height > originalHeight {
+		height = originalHeight
+	}
+
 	return uint(width), uint(height), path
 }
 
@@ -81,6 +100,10 @@ func (s *FileService) resizeImage(file io.Reader, ext string, height uint, width
 
 	if err != nil {
 		return nil, err
+	}
+
+	if img == nil {
+		return nil, errors.New("image is nil")
 	}
 
 	var newImg image.Image
